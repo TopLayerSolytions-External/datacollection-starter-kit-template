@@ -1,7 +1,13 @@
+"""
+Project-wide constants.
+
+- Define string literals, numeric constants, and default values here.
+"""
+
 from __future__ import annotations
 
 import pathlib
-from enum import Enum
+from enum import StrEnum
 from typing import TypeVar
 
 from pydantic import BaseModel
@@ -11,7 +17,7 @@ _ROOT_DIR = _CURRENT_DIR.parent
 GENERIC_TYPE = TypeVar("GENERIC_TYPE", bound=BaseModel)
 
 
-class AppEnv(str, Enum):
+class AppEnv(StrEnum):
     """
     Defines the execution environments for the application.
 

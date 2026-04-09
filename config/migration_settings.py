@@ -1,3 +1,9 @@
+"""
+Settings and helpers for database migrations.
+
+- Optional: can store Alembic configuration helpers or migration defaults.
+"""
+
 from __future__ import annotations
 
 from pydantic import Field

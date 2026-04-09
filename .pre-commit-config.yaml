@@ -7,5 +7,6 @@ repos:
     rev: v0.15.9
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [--fix, --line-length=110]
       - id: ruff-format
+        args: [--line-length=110]

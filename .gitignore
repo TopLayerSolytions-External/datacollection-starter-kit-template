@@ -13,6 +13,9 @@ Thumbs.db
 .env
 .env.*
 ../.env
+# Ignore all .env files except .env.example which contains the template for environment variables
+!.env.example
+
 
 # Secrets
 *.pfx

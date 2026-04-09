@@ -48,4 +48,4 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 EXPOSE 8000
 
 # Command to run the application
-CMD ["uv", "run", "python", "main.py"]
+CMD ["uv", "run", "python", "-m", "main"]
