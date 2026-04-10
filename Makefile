@@ -37,9 +37,9 @@ setup:          ## Initial setup — run once after cloning
 		db_pass=$$(openssl rand -hex 8); \
 		sed -i.bak \
 			-e "s|^PROJECT_NAME=.*|PROJECT_NAME=$$pname|" \
-			-e "s|^POSTGRES_PORT=.*|POSTGRES_PORT=$$pport|" \
+			-e "s|^DB_PORT=.*|DB_PORT=$$pport|" \
 			-e "s|^TEMPORAL_UI_PORT=.*|TEMPORAL_UI_PORT=$$uiport|" \
-			-e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$$db_pass|" \
+			-e "s|^DB_PASSWORD=.*|DB_PASSWORD=$$db_pass|" \
 			-e "s|@sandbox:$$pport|@sandbox:5432|" \
 			.env && rm -f .env.bak; \
 		echo ""; \
