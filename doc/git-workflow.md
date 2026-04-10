@@ -1,16 +1,21 @@
 This guide explains how to work with Git in this project. The `main` branch is protected — you cannot push directly to it. All changes go through feature branches and pull requests.
 
 ---
+## The Branching Strategy
+- **main:** The "Holy Grail." This branch contains stable code. Direct pushes are strictly forbidden.
 
+- **development:** The integration branch. This is the default branch. All feature branches start from here and merge back into here.
+
+- **feature/*** or **fix/***: Temporary branches where actual work happens.
+
+---
 ## Daily workflow
-
 ### 1. Always start from an updated main
 
-Before starting any new work, make sure your local `main` is up to date:
-
+Before starting any new work, make sure your local **development** branch is up to date:
 ```bash
-git checkout main
-git pull origin main
+git checkout development
+git pull origin development
 ```
 
 ### 2. Create a feature branch
@@ -39,7 +44,11 @@ chore/update-readme
 
 ### 3. Write your code
 
-Make changes, test them locally, check logs with `make logs-app`.
+As you write code, use the provided tools to keep it clean:
+
+- make format: Automatically fixes simple linting issues and formats your code (indentation, line lengths).
+
+- make lint: Runs a full check (Ruff, Pyright, Secret detection) to ensure everything is perfect.
 
 ### 4. Commit regularly
 
@@ -72,17 +81,17 @@ git push origin feature/fetch-documents
 
 ### 6. Open a pull request
 
-Go to the GitHub repository. GitHub will show a prompt to create a pull request from your recently pushed branch. Click it, fill in a description of what you changed and why, and submit.
+Go to the GitHub repository. Open a PR to merge your branch into **development** (NOT into **main**).
 
-If there is a reviewer assigned to your team, wait for their feedback before merging.
+Fill in a description of your changes and wait for a review or CI status checks.
 
 ### 7. After merge
 
-Once your pull request is merged, switch back to main and pull the latest:
+Once your pull request is merged, switch back to development and pull the latest:
 
 ```bash
-git checkout main
-git pull origin main
+git checkout development
+git pull origin development
 ```
 
 Delete your local branch if you no longer need it:
@@ -95,15 +104,16 @@ git branch -d feature/fetch-documents
 
 ## Pre-commit hooks
 
-This project uses pre-commit hooks — scripts that run automatically before every `git commit`. They check your code for formatting and style issues.
+This project uses **pre-commit hooks** to enforce code quality. They act as a gatekeeper.
 
-If the check fails, your commit is rejected. Fix the reported issues and try again.
-
-You can also run the checks manually at any time:
+**What do they check?**
+- Ruff: Syntax errors, unused imports, and the 110/120 character line limit.
+- Secret Detection: Prevents accidental commits of API keys or passwords.
+- Protection: A local hook prevents you from accidentally pushing directly to main.
 
 ```bash
-make lint
-make format
+make lint # Run all checks on all files
+make format # Run only the auto-formatter/fixer
 ```
 
 If pre-commit hooks are not running (e.g., after a fresh clone), install them:
@@ -131,23 +141,28 @@ git stash pop
 ### I need to update my branch with new changes from main
 
 ```bash
-git checkout main
-git pull origin main
+git checkout development
+git pull origin development
 git checkout feature/my-feature
-git rebase main
+git rebase development
+```
+### I want to undo my last commit (but keep the changes)
+```Bash
+git reset --soft HEAD~1
 ```
 
-If there are conflicts, Git will tell you which files to resolve. Open them, fix the conflicts, then:
+### I want to see what changed before committing
+```Bash
+git status   # see which files are modified
+git diff     # see the actual line-by-line changes
+```
+
+### If there are conflicts, 
+Git will tell you which files to resolve. Open them, fix the conflicts, then:
 
 ```bash
 git add .
 git rebase --continue
-```
-
-### I want to undo my last commit (but keep the changes)
-
-```bash
-git reset --soft HEAD~1
 ```
 
 ### I want to see what changed before committing

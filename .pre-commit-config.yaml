@@ -10,3 +10,11 @@ repos:
         args: [--fix, --line-length=110]
       - id: ruff-format
         args: [--line-length=110]
+
+  - repo: local
+    hooks:
+      - id: no-push-to-main
+        name: Prevent direct push to main
+        entry: bash -c 'if [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]; then echo "STOP! Do not push directly on main branch. Checkout development branch."; exit 1; fi'
+        language: system
+        stages: [pre-push]
