@@ -53,10 +53,9 @@ Our Temporal logic is organized inside the `src/temporal/` directory:
 
   - **`src/temporal/activities/`**: Definition of atomic tasks.
   - **`src/temporal/workflows/`**: Definition of orchestration logic.
-  - **`src/temporal/triggers/`**: Logic for starting/triggering workflows.
   - **`src/temporal/client.py`**: Shared connection logic.
   - **`src/temporal/worker.py`**: (Optional) Specific worker setup if separated from `main.py`.
-
+  - **`scripts/`**: Logic for starting/triggering workflows.
 -----
 
 ## How execution flows
@@ -168,9 +167,10 @@ We use a centralized way to connect to Temporal via `src/temporal/client.py`.
 from temporalio.client import Client
 from config.settings import settings
 
+
 async def get_temporal_client() -> Client:
     """Returns a connected Temporal client."""
-    return await Client.connect(settings.TEMPORAL_HOST)
+    return await Client.connect(settings.temporal_host)
 ```
 
 -----
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 Triggers are used to start workflow executions. They can be called from FastAPI, CLI, or standalone scripts.
 
 ```python
-# src/temporal/triggers/example_trigger.py
+# cripts/example_trigger.py
 import uuid
 from temporalio.client import Client
 from src.temporal.workflows.example_workflow import ExampleWorkflow
@@ -232,7 +232,7 @@ async def run_example_trigger(client: Client, name: str = "Student") -> str:
 To run a trigger manually for testing:
 
 ```bash
-uv run python -m src.temporal.triggers.run_example_script
+uv run python -m src.temporal.scripts.run_example_script
 ```
 
 -----
@@ -271,5 +271,5 @@ Always use `await asyncio.sleep()` or `workflow.sleep()`.
 2.  Create a workflow class in `src/temporal/workflows/`.
 3.  Import activities inside `with workflow.unsafe.imports_passed_through()`.
 4.  Add the workflow class and activity functions to the `Worker` in `main.py`.
-5.  Create a trigger in `src/temporal/triggers/` to start the workflow.
+5.  Create a trigger in `scripts/` to start the workflow.
 6.  Check [http://localhost:8080](https://www.google.com/search?q=http://localhost:8080) to see it run.

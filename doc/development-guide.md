@@ -21,7 +21,6 @@ project/
 │   └── temporal/       # All Temporal-related logic
 │       ├── activities/ # individual atomic tasks (e.g., API calls, DB writes)
 │       ├── workflows/  # orchestration logic (calling activities in order)
-│       ├── triggers/   # scripts and functions to start workflow executions
 │       ├── client.py   # centralized Temporal client connection helper
 │       └── worker.py   # worker-specific setup and registration
 │
@@ -32,7 +31,8 @@ project/
 │   ├── docker-compose.yml
 │   └── Dockerfile
 │
-├── scripts/            # general utility scripts (not related to Temporal)
+├── scripts/            # standalone Python scripts that are used to interact with the system manually (e.g., triggering workflows, running one-off tasks, maintenance scripts, testing helpers)
+│
 ├── main.py             # application entry point — starts the Temporal worker
 ├── pyproject.toml      # project dependencies (uv) and tool configuration
 ├── Makefile            # shortcuts for common commands (make setup, make start)
@@ -238,7 +238,7 @@ Environment variables are available through the settings object:
 ```python
 from config.settings import settings
 
-print(settings.TEMPORAL_HOST)
+print(settings.temporal_host)
 print(settings.DATABASE_URL)
 ```
 

@@ -1,8 +1,8 @@
-"""initial example table created
+"""initial migration
 
-Revision ID: 9a96b4841ad7
+Revision ID: 3a4d7a3dbd50
 Revises:
-Create Date: 2026-04-09 12:52:40.633706
+Create Date: 2026-04-10 17:22:24.456723
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "9a96b4841ad7"
+revision: str = "3a4d7a3dbd50"
 down_revision: str | Sequence[str] | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -27,18 +27,8 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.String(length=512), nullable=True),
-        sa.Column(
-            "created_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=True,
-        ),
-        sa.Column(
-            "updated_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=True,
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_example_table")),
     )
     op.create_index(op.f("ix_example_table_id"), "example_table", ["id"], unique=False)

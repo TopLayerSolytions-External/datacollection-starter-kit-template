@@ -3,10 +3,10 @@ Run this script with `temporal trigger run example_trigger.py` to see the trigge
 It will print "Hello, Temporal!" every 5 seconds.
 How to run:
     make shell-app
-    python  src/temporal/triggers/example_trigger.py
+    python  src/temporal/scripts/example_trigger.py
 
 Or directly with Temporal CLI:
-    uv run python src/temporal/triggers/example_trigger.py
+    uv run python src/temporal/scripts/example_trigger.py
 
 Then open: http://localhost:8080/
 """

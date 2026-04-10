@@ -6,10 +6,8 @@ from alembic.config import Config
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from config.migration_settings import MigrationSettings
+from config.settings import settings
 from src.db.models import Base
-
-migration_settings = MigrationSettings()
 
 current_file_location = Path(__file__)
 alembic_dir = current_file_location.parent
@@ -23,7 +21,7 @@ config = Config(str(alembic_ini_path))
 # Disable interpolation in the config
 config.parser = ConfigParser(interpolation=None)
 
-DB_URL = migration_settings.DB_URL
+DB_URL = settings.db_url
 # Fix: Escape `%` in DB_URL before setting it
 DB_URL_ESCAPED = DB_URL.replace("%", "%%")
 if DB_URL_ESCAPED:

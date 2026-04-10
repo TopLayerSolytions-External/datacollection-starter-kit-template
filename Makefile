@@ -3,69 +3,108 @@
 # Use: make <target>
 # Command list: make help
 
-.PHONY: help setup start stop restart logs ps build migrate migrate-down \
-        migrate-create test lint format clean reset shell-app shell-db
+.PHONY: help setup start stop restart build ps logs logs-app logs-temporal \
+        migrate migrate-down migrate-create migrate-history \
+        test test-fast lint format shell-app shell-db clean reset
 
-COMPOSE = docker compose -f docker/docker-compose.yml
-APP_SERVICE = datacollection_python
+ROOT_DIR := $(shell pwd)
+COMPOSE = docker compose -f docker/docker-compose.yml --env-file $(shell pwd)/.env
+APP_SERVICE = app
 DB_SERVICE = postgres
 
-# ─── Setup ───────────────────────────────────────
+# ─── Setup ───────────────────────────────────────────────────
 
-help:           ## Display the list of available commands
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
-
-setup:          ## Initial setup - run once when cloning the repo
-	@echo "→ Copying .env.example to .env"
-	@test -f .env || cp .env.example .env
-	@echo "→ Installing Python dependencies"
-	uv sync
-	@echo "→ Installing pre-commit hooks"
-	uv run pre-commit autoupdate
-	uv run pre-commit install
-	@echo "✓ Setup complete. Run: make start"
+setup:          ## Initial setup — run once after cloning
+	@echo "Checking dependencies..."
+	@command -v uv >/dev/null 2>&1 || \
+		(echo "ERROR: uv is not installed. Install it: https://docs.astral.sh/uv/getting-started/installation/"; exit 1)
+	@command -v docker >/dev/null 2>&1 || \
+		(echo "ERROR: Docker is not installed."; exit 1)
+	@if [ ! -f .env ]; then \
+		cp .env.example .env; \
+		echo ""; \
+		echo "=== INITIAL PROJECT SETUP ==="; \
+		echo ""; \
+		read -p "  Project name (e.g. unisa-g1): " pname; \
+		while [ -z "$$pname" ]; do \
+			echo "  Project name cannot be empty."; \
+			read -p "  Project name (e.g. unisa-g1): " pname; \
+		done; \
+		read -p "  External Postgres port [5432]: " pport; \
+		pport=$${pport:-5432}; \
+		read -p "  External Temporal UI port [8080]: " uiport; \
+		uiport=$${uiport:-8080}; \
+		db_pass=$$(openssl rand -hex 8); \
+		sed -i.bak \
+			-e "s|^PROJECT_NAME=.*|PROJECT_NAME=$$pname|" \
+			-e "s|^POSTGRES_PORT=.*|POSTGRES_PORT=$$pport|" \
+			-e "s|^TEMPORAL_UI_PORT=.*|TEMPORAL_UI_PORT=$$uiport|" \
+			-e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$$db_pass|" \
+			-e "s|@sandbox:$$pport|@sandbox:5432|" \
+			.env && rm -f .env.bak; \
+		echo ""; \
+		echo "  Project : $$pname"; \
+		echo "  DB port : $$pport"; \
+		echo "  UI port : $$uiport"; \
+		echo "  DB pass : $$db_pass (saved to .env)"; \
+		echo ""; \
+		echo "Setup complete."; \
+	else \
+		echo ".env already exists — skipping interactive setup."; \
+	fi
+	@echo "Installing Python dependencies..."
+	@uv sync
+	@echo "Installing pre-commit hooks..."
+	@uv run pre-commit install
+	@uv run pre-commit install --hook-type pre-push
+	@echo ""
+	@echo "Done. Next step: make start"
 
 
 # ─── Lifecycle ───────────────────────────────────────
 
-start:          ## Start all services in the background (detached mode)
+start:          ## Start all services
+	@docker info >/dev/null 2>&1 || \
+		(echo "ERROR: Docker is not running. Start Docker Desktop first."; exit 1)
+	@test -f .env || \
+		(echo "ERROR: .env file not found. Run: make setup"; exit 1)
 	$(COMPOSE) up -d
 	@echo ""
-	@echo "  Temporal UI → http://localhost:8080"
-	@echo "  Postgres    → localhost:5432"
-	@echo "  Datacollection Python App logs    → make logs"
+	@echo "  Temporal UI -> http://localhost:$$(grep TEMPORAL_UI_PORT .env | cut -d= -f2)"
+	@echo "  Postgres    -> localhost:$$(grep ^POSTGRES_PORT .env | cut -d= -f2)"
+	@echo "  Logs        -> make logs-app"
 
-stop:           ## Stop all services (don't remove containers, keep data)
+
+stop:           ## Stop all services (data is preserved)
 	$(COMPOSE) down
 
 restart:        ## Restart all services (stop + start)
 	$(COMPOSE) restart
 
-build:          ## Rebuild app image (use if you changed Dockerfile or dependencies)
+build:          ## Rebuild app Docker image (run after adding new packages)
 	$(COMPOSE) build $(APP_SERVICE)
 
 ps:             ## Status of the running containers
 	$(COMPOSE) ps
 
-logs:           ## Tracking logs of all services (app + temporal, Ctrl+C for stop)
+logs:           ## Stream logs of all services
 	$(COMPOSE) logs -f
 
-logs-app:       ## Tracking logs of the app service only (Ctrl+C for stop)
+logs-app:       ## Stream logs of the app service only
 	$(COMPOSE) logs -f $(APP_SERVICE)
 
-logs-temporal:  ## Tracking logs of the temporal service only (Ctrl+C for stop)
+logs-temporal:  ## Stream logs of the temporal service only
 	$(COMPOSE) logs -f temporal
 
 # ─── Database ────────────────────────────────────────────────
 
-migrate:        ## Run all migrations (alembic upgrade head)
+migrate:        ## Apply all pending migrations
 	$(COMPOSE) exec $(APP_SERVICE) uv run alembic upgrade head
 
-migrate-down:   ## One migration back (alembic downgrade -1)
+migrate-down:   ## Roll back last migration
 	$(COMPOSE) exec $(APP_SERVICE) uv run alembic downgrade -1
 
-migrate-create: ## Make a new migration with autogenerate (alembic revision --autogenerate -m "message")
+migrate-create: ## Create new migration: make migrate-create MSG="add tasks table"
 	$(COMPOSE) exec $(APP_SERVICE) uv run alembic revision --autogenerate -m "$(MSG)"
 
 migrate-history:## Get the history of migrations (alembic history --verbose)
@@ -73,35 +112,35 @@ migrate-history:## Get the history of migrations (alembic history --verbose)
 
 # ─── Testing & quality ───────────────────────────────────────
 
-test:           ## Run all tests with coverage report (uv run pytest --cov=src --cov-report=term-missing -v)
+test:           ## Run all tests with coverage report
 	uv run pytest --cov=src --cov-report=term-missing -v
 
-test-fast:      ## Run tests without coverage (faster, uv run pytest -x -q)
+test-fast:      ## Run tests without coverage
 	uv run pytest -x -q
 
-lint:           ## Run all pre-commit hooks (Ruff, Secrets, etc.) and Pyright
+lint:           ## Check code quality
 	uv run pre-commit run --all-files
 	uv run pyright src/
 
-format:         ## Automatically fix formatting and linting issues
+format:         ## Fix code formatting
 	uv run ruff format .
 	uv run ruff check --fix .
 
 # ─── Shells ──────────────────────────────────────────────────
 
-shell-app:      ## Open shell inside the app container (bash)
+shell-app:      ## Open shell inside app container
 	$(COMPOSE) exec $(APP_SERVICE) /bin/bash
 
-shell-db:       ## Open psql shell inside the postgres container (psql -U user -d db)
+shell-db:       ## Open psql shell inside database container
 	$(COMPOSE) exec $(DB_SERVICE) psql -U $${POSTGRES_USER:-sandbox} -d $${POSTGRES_DB:-sandbox_db}
 
 # ─── Cleanup ─────────────────────────────────────────────────
 
-clean:          ## Remove all stopped containers, dangling images, and unused volumes (docker system prune -a --volumes)
+clean:          ## Remove containers and local images
 	$(COMPOSE) down --rmi local
 
-reset:          ## ⚠ REMOVE ALL DATA - Stop containers, remove them, and delete all volumes (docker compose down -v)
+reset:          ## ⚠ REMOVE ALL DATA - delete all containers and data
 	@echo "⚠ This will remove ALL from the database. Continue? [y/N]"
 	@read ans && [ $${ans:-N} = y ] || exit 1
-	$(COMPOSE) down -v
+	$(COMPOSE) down -v --remove-orphans
 	@echo "✓ Reset completed. Run: make start && make migrate"

@@ -27,7 +27,7 @@ log = structlog.get_logger(__name__)
 async def run_worker() -> None:
     # We use a shared client configuration to connect to the Temporal server.
     # This allows us to reuse the same connection across different parts of the application
-    # (e.g., triggers, workers).
+    # (e.g., scripts, workers).
     client = await get_temporal_client()
 
     worker = Worker(
