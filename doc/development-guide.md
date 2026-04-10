@@ -8,7 +8,7 @@
 project/
 ├── config/
 │   ├── logger.py       # logging configuration — do not modify
-│   └── settings.py     # reads environment variables from .env
+│   └── settings.py     # reads environment variables from .env and other configuration
 │
 ├── src/
 │   ├── api/            # FastAPI endpoints and route definitions

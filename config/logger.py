@@ -2,7 +2,8 @@
 Logger configuration for the app.
 
 - Provides a standard logging setup for workflows, scripts, and tests.
-- Log initialize with command "log = structlog.get_logger(__name__)".
+- Initialize once at the start of the application using "setup_logging()".
+- Log initialize with command "log = structlog.get_logger(__name__)" in each file required logging.
 """
 
 import logging
