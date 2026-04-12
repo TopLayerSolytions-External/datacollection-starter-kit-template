@@ -47,7 +47,6 @@ logs
 !.env.example
 
 # Docker files
-docker
 docker-compose*.yml
 Dockerfile*
 
